@@ -1,0 +1,35 @@
+---
+title: "Get CSV data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+
+```
+
+
+## Get Data, first 1,000 records only
+
+
+```{r get data, echo=FALSE}
+
+d_mobility <- read.csv("https://data.bts.gov/resource/w96p-f2qv.csv")
+d_vaccinations <- read.csv("https://data.cdc.gov/resource/8xkx-amqh.csv")
+
+
+```
+
+## Preview Data, first 1,000 records only
+
+```{r}
+d_mobility
+d_vaccinations
+
+```
+## Filter Data (need to import all data before filtering)
+```{r}
+d_mobility = d_mobility %>% filter(d_mobility$level == "State")
+d_mobility
+```
