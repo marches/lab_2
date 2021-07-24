@@ -1,0 +1,18 @@
+```{r}
+library(tidyverse)
+```
+
+```{r}
+setwd(".")
+trips <- read.csv(file=file.path("./data/", "Trips_by_Distance.csv"))
+airports <- read.csv(file=file.path("./data/", "vale_eligible_airports.csv"))
+census <- read.csv(file=file.path("./data/", "ACSDP1Y2019.DP05_data_with_overlays_2021-07-19T203425.csv"))
+income <- read.csv(file=file.path("./data/", "CAINC1 Personal Income Summary Personal Income Population Per Capita Personal Income.csv"))
+```
+
+```{r}
+trips
+airports
+income
+census
+```
