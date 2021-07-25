@@ -1,18 +1,85 @@
 ```{r}
 library(tidyverse)
+library(dplyr)
 ```
 
 ```{r}
 setwd(".")
 trips <- read.csv(file=file.path("./data/", "Trips_by_Distance.csv"))
 airports <- read.csv(file=file.path("./data/", "vale_eligible_airports.csv"))
-census <- read.csv(file=file.path("./data/", "ACSDP1Y2019.DP05_data_with_overlays_2021-07-19T203425.csv"))
+census <- read.csv(file=file.path("./data/", "cc-est2019-alldata.csv"))
 income <- read.csv(file=file.path("./data/", "CAINC1 Personal Income Summary Personal Income Population Per Capita Personal Income.csv"))
 ```
 
 ```{r}
 trips
 airports
-income
 census
+income
 ```
+Trip data: Remove "County" from county names to get ready to combine the data. This data also has total state information. That is removed as well. 
+```{r}
+trips <- trips %>%
+  mutate(County.Name.Filt.On = str_remove_all(County.Name, "County"))
+trips <- trips %>%
+  rename(State = State.Postal.Code)
+trips <- trips[order(trips$State, trips$County.Name.Filt.On),]
+```
+```{r}
+view(trips)
+```
+Airport data: Remove "(CA)" from Alaska county names. Groupby state and county name on two metrics: # of airports in the county and total # of enplanements in the county (from Enplane..ments2 column). An Enplanement means the boarding of an aircraft by a revenue passenger, including an original, stopover, or transfer boarding of the aircraft.  
+```{r}
+airports <- airports %>% # Remove non-hub airports (regional only) 
+  mutate(County.Name.Filt.On = str_remove_all(County, "\\(CA\\)"), Enplanements.Num = as.numeric(gsub(",","",airports$Enplane..ments2)))
+airports <- airports[airports$HUB3 != "None",]
+airports <- airports %>%
+  group_by(State, County.Name.Filt.On) %>%
+  summarise(Num.Enplanements = sum(Enplanements.Num), Num.Airports = n())
+airports <- airports[order(airports$State, airports$County.Name.Filt.On),]
+```
+```{r}
+view(airports)
+```
+Income data: split county and state postal code into new columns to use for grouping. 15 entries (5 total counties since each county has 3 entries) have names with multiple commmas in them which are not correctly split below and which are going to be tossed out for now. Income data also has a population field that we can use. Also, there are some counties which don't appear to have information. Drop them? 
+
+```{r}
+income <- separate(income, GeoName, into = c("County.Name.Filt.On", "State"), sep = "\\,", remove = FALSE)
+income <- income %>% 
+  mutate(State = str_remove_all(State, "\\*"))
+income <- subset(income, select = -c(LineCode))
+income <- pivot_wider(income, names_from = Description, values_from = X2019)
+income <- income[order(income$State, income$County.Name.Filt.On),]
+```
+
+```{r}
+view(income)
+```
+Census data: Remove "County" from CITYNAME (which is actually county name) and convert STNAME to abbreviation. 
+```{r}
+census <- read.csv(file=file.path("./data/", "cc-est2019-alldata.csv"))
+census <- census %>% 
+  mutate(County.Name.Filt.On = str_remove_all(CTYNAME, "County"))
+census$State <- state.abb[match(census$STNAME, state.name)]
+census <- census[order(census$State, census$County.Name.Filt.On),]
+```
+
+```{r}
+view(census)
+```
+
+Choosing to remove Alaska and Hawaii because they are such different geography that comparing to mainland US would be apples and oranges. (Also Alaska county names are very inconsistent and would be hard to merge)
+
+```{r}
+trips <- trips[!(trips$State=="AK" | trips$State.Postal.Code=="HI"),]
+airports <- airports[!(airports$State=="AK" | airports$State=="HI"),]
+census <- census[!(census$State=="AK" | census$State=="HI"),]
+income <- income[!(income$State=="AK" | income$State== "HI"),]
+```
+
+Attempt to merge. Merge on state names and county names. Due to variability in how some counties are documented, they will be lost. Hope we can make an argument that we have enough data remaining. Perform inner merge on income, trips and census and outer merge on airports. 
+
+```{r}
+
+```
+
