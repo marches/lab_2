@@ -9,6 +9,11 @@ trips <- read.csv(file=file.path("./data/", "Trips_by_Distance.csv"))
 airports <- read.csv(file=file.path("./data/", "vale_eligible_airports.csv"))
 census <- read.csv(file=file.path("./data/", "cc-est2019-alldata.csv"))
 income <- read.csv(file=file.path("./data/", "CAINC1 Personal Income Summary Personal Income Population Per Capita Personal Income.csv"))
+cars <- read.csv(file=file.path("./data/", "Households_withcars.csv"))
+vaccinations <- read.csv(file=file.path("./data/", "Covid-19-vaccinations-in-US-by-County-May-1.csv")) 
+```
+```{r}
+education <- read.csv(file=file.path("./data/", "education_2015-2019.csv"))
 ```
 
 ```{r}
@@ -16,7 +21,23 @@ trips
 airports
 census
 income
+cars
+vaccinations
+education
 ```
+Car, Education and Vaccination data is already formatted, just rename County column for consistency
+```{r}
+cars <- cars %>%
+  rename(County.Name.Filt.On = County)
+
+vaccinations <- vaccinations %>%
+  rename(County.Name.Filt.On = Recip_County, State = Recip_State)
+```
+```{r}
+education <- education %>%
+  rename(County.Name.Filt.On = Area.name)
+```
+
 Trip data: Remove "County" from county names to get ready to combine the data. This data also has total state information. That is removed as well. 
 ```{r}
 trips <- trips %>%
@@ -44,7 +65,8 @@ view(airports)
 Income data: split county and state postal code into new columns to use for grouping. 15 entries (5 total counties since each county has 3 entries) have names with multiple commmas in them which are not correctly split below and which are going to be tossed out for now. Income data also has a population field that we can use. Also, there are some counties which don't appear to have information. Drop them? 
 
 ```{r}
-income <- separate(income, GeoName, into = c("County.Name.Filt.On", "State"), sep = "\\,", remove = FALSE)
+income <- read.csv(file=file.path("./data/", "CAINC1 Personal Income Summary Personal Income Population Per Capita Personal Income.csv"))
+income <- separate(income, GeoName, into = c("County.Name.Filt.On", "State"), sep = "\\, ", remove = FALSE)
 income <- income %>% 
   mutate(State = str_remove_all(State, "\\*"))
 income <- subset(income, select = -c(LineCode))
@@ -71,15 +93,38 @@ view(census)
 Choosing to remove Alaska and Hawaii because they are such different geography that comparing to mainland US would be apples and oranges. (Also Alaska county names are very inconsistent and would be hard to merge)
 
 ```{r}
-trips <- trips[!(trips$State=="AK" | trips$State.Postal.Code=="HI"),]
+trips <- trips[!(trips$State=="AK" | trips$State=="HI"),]
 airports <- airports[!(airports$State=="AK" | airports$State=="HI"),]
 census <- census[!(census$State=="AK" | census$State=="HI"),]
 income <- income[!(income$State=="AK" | income$State== "HI"),]
+cars <- cars[!(income$State=="AK" | income$State== "HI"),]
+vaccinations <- vaccinations[!(income$State=="AK" | income$State== "HI"),]
+education <- education[!(income$State=="AK" | income$State== "HI"),]
+```
+Remove all whitespace from County.Name.Filt.On columns
+```{r}
+trips$County.Name.Filt.On <- trimws(trips$County.Name.Filt.On)
+airports$County.Name.Filt.On <- trimws(airports$County.Name.Filt.On)
+census$County.Name.Filt.On <- trimws(census$County.Name.Filt.On)
+income$County.Name.Filt.On <- trimws(income$County.Name.Filt.On)
+cars$County.Name.Filt.On <- trimws(cars$County.Name.Filt.On)
+vaccinations$County.Name.Filt.On <- trimws(vaccinations$County.Name.Filt.On)
+education$County.Name.Filt.On <- trimws(education$County.Name.Filt.On)
 ```
 
 Attempt to merge. Merge on state names and county names. Due to variability in how some counties are documented, they will be lost. Hope we can make an argument that we have enough data remaining. Perform inner merge on income, trips and census and outer merge on airports. 
 
 ```{r}
-
+# Inner merge on: trips, census, income, cars, vaccines
+# Outer merge on: airports 
+full_data = merge(income, census, by = c("State", "County.Name.Filt.On"))
+full_data = merge(full_data, trips, by = c("State", "County.Name.Filt.On"))
+full_data = merge(full_data, cars, by = c("State", "County.Name.Filt.On"))
+full_data = merge(full_data, vaccinations, by = c("State", "County.Name.Filt.On"))
+full_data = merge(full_data, education, by = c("State", "County.Name.Filt.On"))
+full_data = merge(full_data, airports, by = c("State", "County.Name.Filt.On"), all.x = TRUE)
+```
+```{r}
+view(full_data)
 ```
 
