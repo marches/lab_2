@@ -3,6 +3,14 @@ library(tidyverse)
 library(dplyr)
 ```
 
+This notebook contains all data processing to create the base dataframe used for modeling. The datasets used are:
+1. Trips_by_Distance.csv
+2. vale_eligible_airports.csv
+3. cc-est2019-alldata.csv
+4. CAINC1 Personal Income Summary Personal Income Population Per Capita Personal Income.csv
+5. Households_withcars.csv
+6. Covid-19-vaccinations-in-US-by-County-May-1.csv
+7. education_2015-2019.csv
 ```{r}
 setwd(".")
 trips <- read.csv(file=file.path("./data/", "Trips_by_Distance.csv"))
@@ -11,21 +19,20 @@ census <- read.csv(file=file.path("./data/", "cc-est2019-alldata.csv"))
 income <- read.csv(file=file.path("./data/", "CAINC1 Personal Income Summary Personal Income Population Per Capita Personal Income.csv"))
 cars <- read.csv(file=file.path("./data/", "Households_withcars.csv"))
 vaccinations <- read.csv(file=file.path("./data/", "Covid-19-vaccinations-in-US-by-County-May-1.csv")) 
-```
-```{r}
 education <- read.csv(file=file.path("./data/", "education_2015-2019.csv"))
 ```
 
+Display each dataframe for visual overview. 
 ```{r}
-trips
-airports
-census
-income
-cars
-vaccinations
-education
+head(trips)
+head(airports)
+head(census)
+head(income)
+head(cars)
+head(vaccinations)
+head(education)
 ```
-Car, Education and Vaccination data is already formatted, just rename County column for consistency
+Car, Education and Vaccination data is already formatted. The only change necessary is to rename County column for consistency later on. 
 ```{r}
 cars <- cars %>%
   rename(County.Name.Filt.On = County)
@@ -49,6 +56,7 @@ trips <- trips[order(trips$State, trips$County.Name.Filt.On),]
 ```{r}
 view(trips)
 ```
+
 Airport data: Remove "(CA)" from Alaska county names. Groupby state and county name on two metrics: # of airports in the county and total # of enplanements in the county (from Enplane..ments2 column). An Enplanement means the boarding of an aircraft by a revenue passenger, including an original, stopover, or transfer boarding of the aircraft.  
 ```{r}
 airports <- airports %>% # Remove non-hub airports (regional only) 
@@ -62,8 +70,8 @@ airports <- airports[order(airports$State, airports$County.Name.Filt.On),]
 ```{r}
 view(airports)
 ```
-Income data: split county and state postal code into new columns to use for grouping. 15 entries (5 total counties since each county has 3 entries) have names with multiple commmas in them which are not correctly split below and which are going to be tossed out for now. Income data also has a population field that we can use. Also, there are some counties which don't appear to have information. Drop them? 
 
+Income data: split county and state postal code into new columns to use for grouping. 15 entries (5 total counties since each county has 3 entries) have names with multiple commmas in them which are not correctly split below and which are going to be tossed out for now. Income data also has a population field that we can use. Also, there are some counties which don't appear to have information. Manually spot-checked all of these rows and decided that dropping them from the dataset (and thus the final dataframe) would not significantly impact analysis since they are not major outliers and we are only loosing 15 out of ~3100 values.
 ```{r}
 income <- read.csv(file=file.path("./data/", "CAINC1 Personal Income Summary Personal Income Population Per Capita Personal Income.csv"))
 income <- separate(income, GeoName, into = c("County.Name.Filt.On", "State"), sep = "\\, ", remove = FALSE)
@@ -73,10 +81,10 @@ income <- subset(income, select = -c(LineCode))
 income <- pivot_wider(income, names_from = Description, values_from = X2019)
 income <- income[order(income$State, income$County.Name.Filt.On),]
 ```
-
 ```{r}
 view(income)
 ```
+
 Census data: Remove "County" from CITYNAME (which is actually county name) and convert STNAME to abbreviation. 
 ```{r}
 census <- read.csv(file=file.path("./data/", "cc-est2019-alldata.csv"))
@@ -85,13 +93,11 @@ census <- census %>%
 census$State <- state.abb[match(census$STNAME, state.name)]
 census <- census[order(census$State, census$County.Name.Filt.On),]
 ```
-
 ```{r}
 view(census)
 ```
 
-Choosing to remove Alaska and Hawaii because they are such different geography that comparing to mainland US would be apples and oranges. (Also Alaska county names are very inconsistent and would be hard to merge)
-
+Choosing to remove Alaska and Hawaii because they are such different geography that comparing to mainland US would be apples and oranges. 
 ```{r}
 trips <- trips[!(trips$State=="AK" | trips$State=="HI"),]
 airports <- airports[!(airports$State=="AK" | airports$State=="HI"),]
@@ -101,7 +107,8 @@ cars <- cars[!(income$State=="AK" | income$State== "HI"),]
 vaccinations <- vaccinations[!(income$State=="AK" | income$State== "HI"),]
 education <- education[!(income$State=="AK" | income$State== "HI"),]
 ```
-Remove all whitespace from County.Name.Filt.On columns
+
+Remove all whitespace from County.Name.Filt.On columns to be able to perform merge successfully. 
 ```{r}
 trips$County.Name.Filt.On <- trimws(trips$County.Name.Filt.On)
 airports$County.Name.Filt.On <- trimws(airports$County.Name.Filt.On)
@@ -112,8 +119,7 @@ vaccinations$County.Name.Filt.On <- trimws(vaccinations$County.Name.Filt.On)
 education$County.Name.Filt.On <- trimws(education$County.Name.Filt.On)
 ```
 
-Attempt to merge. Merge on state names and county names. Due to variability in how some counties are documented, they will be lost. Hope we can make an argument that we have enough data remaining. Perform inner merge on income, trips and census and outer merge on airports. 
-
+Complete the merge. Merge on state names and county names. Due to variability in how some counties are documented, they will be lost. Hope we can make an argument that we have enough data remaining. Perform inner merge on income, trips and census and outer merge on airports. 
 ```{r}
 # Inner merge on: trips, census, income, cars, vaccines
 # Outer merge on: airports 
