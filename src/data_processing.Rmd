@@ -11,6 +11,13 @@ This notebook contains all data processing to create the base dataframe used for
 5. Households_withcars.csv
 6. Covid-19-vaccinations-in-US-by-County-May-1.csv
 7. education_2015-2019.csv
+
+> All data collected contains (in some format) both a state and county. The goal of the processing in this notebook is to separate this information into two columns (State and County.Name.Filt.On) where State contains the postal state abbreviation (which can be achieved leveraging the r state.abb function) and County.Name.Filt.On contains the name of the county with extraneous descriptors such as "County" and "Borough" removed. 
+
+> All processed dataframes are merged on the State and County.Name.Filt.On columns. More data can be joined with the existing dataset if it is formatted to match. 
+
+> Cleaned data from this notebook is outputted to a separate folder: `/processed_data`. 
+
 ```{r}
 setwd(".")
 trips <- read.csv(file=file.path("./data/", "Trips_by_Distance.csv"))
