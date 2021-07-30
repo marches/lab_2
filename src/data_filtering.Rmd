@@ -41,13 +41,14 @@ filtered_data <- data %>%
          TotPop = TOT_POP, 
          State = State, 
          GeoName= GeoName, 
-         WhitePct = (WA_FEMALE + WA_MALE / TOT_POP), 
+         WhitePct = (WA_FEMALE + WA_MALE) / TOT_POP * 100, 
          BachelorsPct = bachelors_degree_or_higher_percent, 
          Dose1Pct = Administered_Dose1_Pop_Pct, 
-         CarPct = (Total.Households-No.vehicle.available)/Total.Households, 
+         CarPct = (Total.Households-No.vehicle.available)/Total.Households * 100, 
          IncomePerCap = Per.capita.personal.income..dollars..2., 
          AirportEnplanements = Num.Enplanements, 
          TripsOver100PerCap = (Number.of.Trips.100.250 + Number.of.Trips.250.500 + Number.of.Trips...500) / TOT_POP, 
+         TripsOver250PerCap = (Number.of.Trips.250.500 + Number.of.Trips...500) / TOT_POP,
          .keep = "none")
 ```
 
