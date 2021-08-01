@@ -4,6 +4,7 @@
 library(tidyverse)
 library(dplyr)
 install.packages('gclus')
+install.packages('usmap')
 
 library(gclus)
 
@@ -11,11 +12,13 @@ library(gclus)
 
 ```{r}
 setwd(".")
-data <- read.csv("Selected_Data_V1.csv")
+data <- read.csv("Selected_Data_V1.csv", strip.white=TRUE)
+data_fips <- read.csv("vaccines.csv", strip.white=TRUE)
 ```
 
 ```{r}
 head(data)
+head(data_fips)
 ```
 
 The data that we are trying to operationalize is:
@@ -86,6 +89,17 @@ pairs(~TripsOver250PerCap + CarPct + IncomePerCap + Dose1Pct, data=data)
 # cpairs(numeric_data, dta.o, panel.colors=dta.col, gap=.5,
 # main="Variables Ordered and Colored by Correlation" )
 
+names(data_fips)[names(data_fips) == 'Recip_County'] <- 'County'
 
+data2 <- merge(data,data_fips,by = "County")
+names(data2)[names(data2) == 'FIPS'] <- 'fips'
+data_fips
+data
+data2
+library(usmap)
+library(ggplot2)
+
+plot_usmap("counties", data = data2, values = "Dose1Pct", exclude = c("TX", "AK", "HI", "LA")) +
+    ggplot2::scale_fill_continuous(low = "light blue", high = "blue")
 ```
 
