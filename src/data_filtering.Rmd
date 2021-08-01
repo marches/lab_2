@@ -60,3 +60,7 @@ head(filtered_data)
 write.csv(filtered_data, "./processed_data/Selected_Data_V1.csv")
 
 ```
+
+```{r}
+view(filtered_data)
+```
