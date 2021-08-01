@@ -1,0 +1,91 @@
+
+
+```{r}
+library(tidyverse)
+library(dplyr)
+install.packages('gclus')
+
+library(gclus)
+
+```
+
+```{r}
+setwd(".")
+data <- read.csv("Selected_Data_V1.csv")
+```
+
+```{r}
+head(data)
+```
+
+The data that we are trying to operationalize is:
+- vaccination rate: `Administered_Dose1_Pop_Pct`
+- car access: (`Total.Households`-`No.vehicle.available`)/`Total.Households // Fraction of households with at least 1 car
+
+
+```{r}
+
+hist(data$CarPct, xlim=c(50,100), breaks=60)
+hist(data$Dose1Pct)
+
+summary_cars = summary(data$CarPct)
+summary_vaccine = summary(data$Dose1Pct)
+
+
+
+```
+
+```{r}
+summary_cars
+summary_vaccine
+nrow(data)
+sum(data$Dose1Pct == 0)
+sum(data$TripsOver100PerCap > 0, na.rm = TRUE)
+```
+
+```{r}
+no_vaccine_check = select(data, "County", "TotPop", "State", "Dose1Pct")
+no_vaccine_check = subset(no_vaccine_check, Dose1Pct == 0)
+
+no_vaccine_check
+
+
+```
+
+
+```{r}
+plot(data$TripsOver250PerCap,data$Dose1Pct)
+
+
+```
+
+
+
+```{r}
+install.packages("corrplot")
+
+
+
+pairs(~TripsOver250PerCap + CarPct + IncomePerCap + Dose1Pct, data=data)
+
+
+```
+
+```{r}
+
+# library(gclus)
+# 
+# numeric_data = dplyr::select_if(data, is.numeric)
+# 
+# dta.r <- abs(cor(numeric_data)) # get correlations
+# dta.r <- complete.cases(data)
+# dta.col <- dmat.color(dta.r) # get colors
+# # reorder variables so those with highest correlation
+# # are closest to the diagonal
+# dta.o <- order.single(dta.r)
+# cpairs(numeric_data, dta.o, panel.colors=dta.col, gap=.5,
+# main="Variables Ordered and Colored by Correlation" )
+
+
+```
+
