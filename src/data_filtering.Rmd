@@ -68,6 +68,7 @@ Removing Texas, which does not report vaccine delivery by county, there were 118
 filtered_data$AirportEnplanements[is.na(filtered_data$AirportEnplanements)] <- 0
 nrow(filtered_data)
 no_texas_filtered_data <- filtered_data[filtered_data$State != "TX",]
+no_texas_filtered_data <- filtered_data[no_texas_filtered_data$Dose1Pct!=0,]
 zero_no_texas <- no_texas_filtered_data[no_texas_filtered_data$Dose1Pct==0,]
 zero_no_texas[order(zero_no_texas$TotPop, decreasing = TRUE),]
 ```
@@ -79,7 +80,7 @@ head(zero_no_texas)
 
 ```{r}
 write.csv(filtered_data, "./processed_data/Selected_Data_V1.csv")
-write.csv(zero_no_texas, "./processed_data/Selected_Data_V2.csv")
+write.csv(no_texas_filtered_data, "./processed_data/Selected_Data_V2.csv")
 
 ```
 
