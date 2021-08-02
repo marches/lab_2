@@ -8,7 +8,7 @@ library(dplyr)
 ```{r}
 setwd(".")
 data <- read.csv(file=file.path("./processed_data/", "Processed_Data_V1.csv"))
-```
+````
 
 `data` is the result of the complete data merge performed in `data_processing.Rmd`. We need to down-select the variabes we will use for modeling, and perform some necessary scaling/conversions to operationalize everything. The data we are trying to model is:
 
@@ -25,12 +25,17 @@ data <- read.csv(file=file.path("./processed_data/", "Processed_Data_V1.csv"))
 - Car access
   - (`Total.Households`-`No.vehicle.available`)/`Total.Households` fraction of households with at least one car
 - Demographics
-  - (`WA_MALE` + `WA_FEMALE`)/`TOT_POP` percentage of people in the county who are white
+  - (`WA_MALE` + `WA_FEMALE`)/`TOT_POP` percentage of people in the county who are White using White Alone as the metric. 
+  - (BA_MALE + BA_FEMALE)/TOT_POP percentage of people in the county who are Black
+  - (AA_MALE + AA_FEMALE)/TOT_POP percentage of people in the county who are Asian
+  - (H_MALE + H_FEMALE)/TOT_POP percentage of people in the county who are Hispanic (Census definition)
+  - (IA_MALE + IA_FEMALE)/TOT_POP percentage of people in the county who are Indigenous American
 
 Some other necessary descriptive variables are:
 - State
 - County
 - Total county population
+- County code (FIPS) 
 
 ```{r}
 head(data)
@@ -41,7 +46,12 @@ filtered_data <- data %>%
          TotPop = TOT_POP, 
          State = State, 
          GeoName= GeoName, 
-         WhitePct = (WA_FEMALE + WA_MALE) / TOT_POP * 100, 
+         FIPS = FIPS,
+         WhitePct = (WA_FEMALE + WA_MALE) / TOT_POP * 100,
+         AsianPct = (AA_FEMALE + AA_MALE) / TOT_POP * 100,
+         BlackPct = (BA_FEMALE + BA_MALE) / TOT_POP * 100,
+         IndigenousPct = (IA_FEMALE + IA_MALE) / TOT_POP * 100,
+         HispanicPct = (H_FEMALE + H_MALE) / TOT_POP * 100,
          BachelorsPct = bachelors_degree_or_higher_percent, 
          Dose1Pct = Administered_Dose1_Pop_Pct, 
          CarPct = (Total.Households-No.vehicle.available)/Total.Households * 100, 
@@ -52,15 +62,24 @@ filtered_data <- data %>%
          .keep = "none")
 ```
 
+Replace NA in AirportEnplanements. Also evaluate the counties which reported 0 vaccines delivered. 
+Removing Texas, which does not report vaccine delivery by county, there were 118 other counties with vaccination levels at 0. 
+```{r}
+filtered_data$AirportEnplanements[is.na(filtered_data$AirportEnplanements)] <- 0
+nrow(filtered_data)
+no_texas_filtered_data <- filtered_data[filtered_data$State != "TX",]
+zero_no_texas <- no_texas_filtered_data[no_texas_filtered_data$Dose1Pct==0,]
+zero_no_texas[order(zero_no_texas$TotPop, decreasing = TRUE),]
+```
+
 ```{r}
 head(filtered_data)
+head(zero_no_texas)
 ```
 
 ```{r}
 write.csv(filtered_data, "./processed_data/Selected_Data_V1.csv")
+write.csv(zero_no_texas, "./processed_data/Selected_Data_V2.csv")
 
 ```
 
-```{r}
-view(filtered_data)
-```

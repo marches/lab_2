@@ -7,50 +7,37 @@ library(dplyr)
 
 ```{r}
 setwd(".")
-data <- read.csv(file=file.path("../src/processed_data/", "Processed_Data_V1.csv"))
+data <- read.csv(file=file.path("../src/processed_data/", "Selected_Data_V1.csv"))
 ```
 
 ```{r}
 head(data)
 ```
 
-The data that we are trying to operationalize is:
-- vaccination rate: `Administered_Dose1_Pop_Pct`
-- trips over 100 miles: `Number.of.Trips.100.250` + `Number.of.Trips.250.500` + `Number.of.Trips...500`
-- Trips over 100 miles per capita: ...
-- airport access: `Num.Enplanements` (replace NA with 0...)
-- education achievement: `bachelors_degree_or_higher_percent`
-- income : `Per.capita.personal.income..dollars..2.`
-- car access: (`Total.Households`-`No.vehicle.available`)/`Total.Households // Fraction of households with at least 1 car
-- demographics: (`WA_MALE` + `WA_FEMALE`)/`TOT_POP` // Fraction of households that are white? 
-- population: `TOT_POP`
-
+## Demographics
 ```{r}
-subset <- data$Administered_Dose1_Pop_Pct
-subset$Num.Enplanements <- data$Num.Enplanements
-subset$bachelors_degree_or_higher_percent <- data$bachelors_degree_or_higher_percent
-subset$Per.capita.personal.income <- data$Per.capita.personal.income..dollars..2.
-
-subset$Num_Trips_Over_100 <- data$Number.of.Trips.100.250 + data$Number.of.Trips.250.500 + data$Number.of.Trips...500
-subset$Num_Trips_per_cap <- subset$Num_Trips_Over_100/data$TOT_POP
-subset$Own_Car <- (data$Total.Households - data$No.vehicle.available) / data$Total.Households
-subset$Pct_White <- (data$WA_FEMALE + data$WA_MALE) / data$TOT_POP
+hist(data$WhitePct)
+hist(data$BlackPct)
+hist(data$IndigenousPct)
+hist(data$AsianPct)
+hist(data$HispanicPct)
 ```
 
+## Number of trips
 ```{r}
-#hist(log10(subset$Num_Trips_Over_100)) # log transform it is
-hist(subset$Num_Trips_per_cap) # We will work with this 
+hist(data$TripsOver100PerCap)
+hist(data$TripsOver250PerCap)
 ```
+## Demographis and Number of Trips
 ```{r}
-hist(log10(subset$Num.Enplanements)) # log transform on num enplanements 
-hist(subset$Num.Enplanements/1000) # ???????? keep thinking about this one? 
 ```
+## Airports 
 ```{r}
-hist(subset$Pct_White) # log transform or nah - nah all good. 
 ```
+
+## Airports and Number of Trips
 ```{r}
-hist(subset$Per.capita.personal.income) # leave alone? 
-```
-```{r}
-hist(as.numeric(subset$bachelors_degree_or_higher_percent)) # leave alone 
+hist(log10(na.omit(data$AirportEnplanements)))
+
+na.omit(data$AirportEnplanements)
 ```

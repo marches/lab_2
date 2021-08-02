@@ -39,29 +39,35 @@ head(cars)
 head(vaccinations)
 head(education)
 ```
-Car, Education and Vaccination data is already formatted. The only change necessary is to rename County column for consistency later on. 
+Car, Education and Vaccination data is already formatted. The only change necessary is to rename County column for consistency later on. Remove "Parish" from Louisiana rows. 
 ```{r}
 cars <- cars %>%
   rename(County.Name.Filt.On = County)
+cars <- cars %>%
+  mutate(County.Name.Filt.On = str_remove_all(County.Name.Filt.On, "Parish"))
 
 vaccinations <- vaccinations %>%
   rename(County.Name.Filt.On = Recip_County, State = Recip_State)
+vaccinations <- vaccinations %>%
+  mutate(County.Name.Filt.On = str_remove_all(County.Name.Filt.On, "Parish"))
 ```
 ```{r}
 education <- education %>%
   rename(County.Name.Filt.On = Area.name)
+education <- education %>%
+  mutate(County.Name.Filt.On = str_remove_all(County.Name.Filt.On, "Parish"))
 ```
 
-Trip data: Remove "County" from county names to get ready to combine the data. This data also has total state information. That is removed as well. 
+Trip data: Remove "County" and "Parish" from county names to get ready to combine the data. This data also has total state information. That is removed as well. 
 ```{r}
+trips <- read.csv(file=file.path("./data/", "Trips_by_Distance.csv"))
 trips <- trips %>%
   mutate(County.Name.Filt.On = str_remove_all(County.Name, "County"))
 trips <- trips %>%
+  mutate(County.Name.Filt.On = str_remove_all(County.Name.Filt.On, "Parish"))
+trips <- trips %>%
   rename(State = State.Postal.Code)
 trips <- trips[order(trips$State, trips$County.Name.Filt.On),]
-```
-```{r}
-view(trips)
 ```
 
 Airport data: Remove "(CA)" from Alaska county names. Groupby state and county name on two metrics: # of airports in the county and total # of enplanements in the county (from Enplane..ments2 column). An Enplanement means the boarding of an aircraft by a revenue passenger, including an original, stopover, or transfer boarding of the aircraft.  
@@ -70,38 +76,36 @@ airports <- airports %>% # Remove non-hub airports (regional only)
   mutate(County.Name.Filt.On = str_remove_all(County, "\\(CA\\)"), Enplanements.Num = as.numeric(gsub(",","",airports$Enplane..ments2)))
 airports <- airports[airports$HUB3 != "None",]
 airports <- airports %>%
+  mutate(County.Name.Filt.On = str_remove_all(County.Name.Filt.On, "Parish"))
+airports <- airports %>%
   group_by(State, County.Name.Filt.On) %>%
   summarise(Num.Enplanements = sum(Enplanements.Num), Num.Airports = n())
 airports <- airports[order(airports$State, airports$County.Name.Filt.On),]
 ```
-```{r}
-view(airports)
-```
-
 Income data: split county and state postal code into new columns to use for grouping. 15 entries (5 total counties since each county has 3 entries) have names with multiple commmas in them which are not correctly split below and which are going to be tossed out for now. Income data also has a population field that we can use. Also, there are some counties which don't appear to have information. Manually spot-checked all of these rows and decided that dropping them from the dataset (and thus the final dataframe) would not significantly impact analysis since they are not major outliers and we are only loosing 15 out of ~3100 values.
 ```{r}
 income <- read.csv(file=file.path("./data/", "CAINC1 Personal Income Summary Personal Income Population Per Capita Personal Income.csv"))
 income <- separate(income, GeoName, into = c("County.Name.Filt.On", "State"), sep = "\\, ", remove = FALSE)
 income <- income %>% 
   mutate(State = str_remove_all(State, "\\*"))
+income<- income %>%
+  mutate(County.Name.Filt.On = str_remove_all(County.Name.Filt.On, "Parish"))
 income <- subset(income, select = -c(LineCode))
 income <- pivot_wider(income, names_from = Description, values_from = X2019)
 income <- income[order(income$State, income$County.Name.Filt.On),]
 ```
-```{r}
-view(income)
-```
 
-Census data: Remove "County" from CITYNAME (which is actually county name) and convert STNAME to abbreviation. 
+Census data: Remove "County" from CITYNAME (which is actually county name) and convert STNAME to abbreviation. Also remove "Parish" from Louisiana county names. 
 ```{r}
 census <- read.csv(file=file.path("./data/", "cc-est2019-alldata.csv"))
+head(census)
+census <- subset(census, select = -c(STATE))
 census <- census %>% 
   mutate(County.Name.Filt.On = str_remove_all(CTYNAME, "County"))
+census <- census %>%
+  mutate(County.Name.Filt.On = str_remove_all(County.Name.Filt.On, "Parish"))
 census$State <- state.abb[match(census$STNAME, state.name)]
 census <- census[order(census$State, census$County.Name.Filt.On),]
-```
-```{r}
-view(census)
 ```
 
 Choosing to remove Alaska and Hawaii because they are such different geography that comparing to mainland US would be apples and oranges. 
@@ -124,6 +128,24 @@ income$County.Name.Filt.On <- trimws(income$County.Name.Filt.On)
 cars$County.Name.Filt.On <- trimws(cars$County.Name.Filt.On)
 vaccinations$County.Name.Filt.On <- trimws(vaccinations$County.Name.Filt.On)
 education$County.Name.Filt.On <- trimws(education$County.Name.Filt.On)
+
+trips$State <- trimws(trips$State)
+airports$State <- trimws(airports$State)
+census$State <- trimws(census$State)
+income$State <- trimws(income$State)
+cars$State <- trimws(cars$State)
+vaccinations$State <- trimws(vaccinations$State)
+education$State <- trimws(education$State)
+```
+```{r}
+trips[trips$State == "LA",]
+airports[airports$State == "LA",]
+census[census$State == "LA",]
+income[income$State == "LA",]
+cars[cars$State == "LA",]
+vaccinations[vaccinations$State == "LA",]
+education[education$State == "LA",]
+
 ```
 
 Complete the merge. Merge on state names and county names. Due to variability in how some counties are documented, they will be lost. Hope we can make an argument that we have enough data remaining. Perform inner merge on income, trips and census and outer merge on airports. 
@@ -137,9 +159,7 @@ full_data = merge(full_data, vaccinations, by = c("State", "County.Name.Filt.On"
 full_data = merge(full_data, education, by = c("State", "County.Name.Filt.On"))
 full_data = merge(full_data, airports, by = c("State", "County.Name.Filt.On"), all.x = TRUE)
 ```
-```{r}
-view(full_data)
-```
+
 ```{r}
 write.csv(full_data, "./processed_data/Processed_Data_V1.csv")
 ```
