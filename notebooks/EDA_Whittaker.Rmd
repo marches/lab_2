@@ -49,11 +49,14 @@ hist(data$Dose1Pct)
 summary_cars = summary(data$CarPct)
 summary_vaccine = summary(data$Dose1Pct)
 
+#Potential issue with some counties showing no vaccinations
 
+#CarPct distribution
 
 ```
 
 ```{r}
+#Summary statistics and error investigation
 summary_cars
 summary_vaccine
 nrow(data)
@@ -62,6 +65,8 @@ sum(data$TripsOver100PerCap > 0, na.rm = TRUE)
 ```
 
 ```{r}
+
+#EDA on errors / abnormalities in original data
 no_vaccine_check = select(data, "County", "TotPop", "State", "Dose1Pct")
 no_vaccine_check = subset(no_vaccine_check, Dose1Pct == 0)
 
@@ -84,7 +89,7 @@ plot(data$TripsOver250PerCap,data$Dose1Pct)
 install.packages("corrplot")
 
 
-
+#Chart Compare
 pairs(~TripsOver250PerCap + CarPct + IncomePerCap + Dose1Pct, data=data)
 
 
@@ -92,19 +97,7 @@ pairs(~TripsOver250PerCap + CarPct + IncomePerCap + Dose1Pct, data=data)
 
 ```{r}
 
-# library(gclus)
-# 
-# numeric_data = dplyr::select_if(data, is.numeric)
-# 
-# dta.r <- abs(cor(numeric_data)) # get correlations
-# dta.r <- complete.cases(data)
-# dta.col <- dmat.color(dta.r) # get colors
-# # reorder variables so those with highest correlation
-# # are closest to the diagonal
-# dta.o <- order.single(dta.r)
-# cpairs(numeric_data, dta.o, panel.colors=dta.col, gap=.5,
-# main="Variables Ordered and Colored by Correlation" )
-
+#Prep data for US Mapping
 names(data_fips)[names(data_fips) == 'Recip_County'] <- 'County'
 
 data2 <- merge(data,data_fips,by = "County")
@@ -115,11 +108,34 @@ data2
 library(usmap)
 library(ggplot2)
 
+#US map of vaccination rate
 plot_usmap("counties", data = data2, values = "Dose1Pct", exclude = c("TX", "AK", "HI")) +
-   labs(title = "Vaccination Rate by County (Excluding non-reporting counties)", subtitle = "Do counties with a higher vaccination rate have more travel?") +  ggplot2::scale_fill_continuous(low = "gray", high = "Blue", name = "Vaccination rate") +
+   labs(title = "Vaccination Rate by County (Excluding non-reporting counties)", subtitle = "Do counties with a higher vaccination rate have more travel?") +  ggplot2::scale_fill_continuous(low = "light blue", high = "dark blue", name = "Vaccination rate") +
   theme(legend.position = "right")
   
 ```
+
+```{r}
+#Plot USA trips
+plot_usmap("counties", data = data2, values = "TripsOver250PerCap", exclude = c("AK", "HI")) +
+   labs(title = "Trips over 250 miles per capita", subtitle = "Do counties with a higher vaccination rate have more travel?") +  ggplot2::scale_fill_continuous(low = "light blue", high = "dark blue", name = "Trips per capita") +
+  theme(legend.position = "right")
+
+
+  
+```
+
+
+```{r}
+#Plot California
+plot_usmap("counties", include = c("CA"), data = data2, values = "TripsOver250PerCap") +  ggplot2::scale_fill_continuous(low = "light blue", high = "dark blue", name = "Trips over 250 miles per capita") +
+  theme(legend.position = "right")
+plot_usmap("counties", include = c("CA"), data = data2, values = "Dose1Pct") +  ggplot2::scale_fill_continuous(low = "light blue", high = "dark blue", name = "Vaccination rate (%)") +
+  theme(legend.position = "right")
+```
+
+
+
 ```{r}
 
 model  = lm(TripsOver250PerCap ~ Dose1Pct + AirportEnplanements, data=data)
