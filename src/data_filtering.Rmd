@@ -83,4 +83,7 @@ write.csv(filtered_data, "./processed_data/Selected_Data_V1.csv")
 write.csv(no_texas_filtered_data, "./processed_data/Selected_Data_V2.csv")
 
 ```
+```{r}
+no_texas_filtered_data
+```
 
