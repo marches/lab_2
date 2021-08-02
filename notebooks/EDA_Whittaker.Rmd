@@ -3,10 +3,18 @@
 ```{r}
 library(tidyverse)
 library(dplyr)
+
 install.packages('gclus')
 install.packages('usmap')
 
 library(gclus)
+
+library(broom)
+
+library(patchwork)
+
+library(sandwich)
+library(lmtest)
 
 ```
 
@@ -19,6 +27,13 @@ data_fips <- read.csv("vaccines.csv", strip.white=TRUE)
 ```{r}
 head(data)
 head(data_fips)
+# state_check = select(data, "County", "TotPop", "State", "Dose1Pct")
+# data_frame(state_check)
+# new_df = select(state_check, state_check$State == "AL")
+# new_df
+
+# no_vaccine_check = select(data, "County", "TotPop", "State", "Dose1Pct")
+# no_vaccine_check = subset(no_vaccine_check, Dose1Pct == 0)
 ```
 
 The data that we are trying to operationalize is:
@@ -28,7 +43,7 @@ The data that we are trying to operationalize is:
 
 ```{r}
 
-hist(data$CarPct, xlim=c(50,100), breaks=60)
+hist(data$CarPct, xlim=c(80,100), breaks=60)
 hist(data$Dose1Pct)
 
 summary_cars = summary(data$CarPct)
@@ -51,6 +66,7 @@ no_vaccine_check = select(data, "County", "TotPop", "State", "Dose1Pct")
 no_vaccine_check = subset(no_vaccine_check, Dose1Pct == 0)
 
 no_vaccine_check
+# view(no_vaccine_check)
 
 
 ```
@@ -99,7 +115,40 @@ data2
 library(usmap)
 library(ggplot2)
 
-plot_usmap("counties", data = data2, values = "Dose1Pct", exclude = c("TX", "AK", "HI", "LA")) +
-    ggplot2::scale_fill_continuous(low = "light blue", high = "blue")
+plot_usmap("counties", data = data2, values = "Dose1Pct", exclude = c("TX", "AK", "HI")) +
+   labs(title = "Vaccination Rate by County (Excluding non-reporting counties)", subtitle = "Do counties with a higher vaccination rate have more travel?") +  ggplot2::scale_fill_continuous(low = "gray", high = "Blue", name = "Vaccination rate") +
+  theme(legend.position = "right")
+  
 ```
+```{r}
 
+model  = lm(TripsOver250PerCap ~ Dose1Pct + AirportEnplanements, data=data)
+model
+
+model2 = lm(TripsOver250PerCap ~ Dose1Pct + CarPct + IncomePerCap + AirportEnplanements + BachelorsPct + WhitePct + BlackPct + IndigenousPct + HispanicPct + AsianPct, data=data)
+model2
+
+model3 = lm(TripsOver250PerCap ~ Dose1Pct + CarPct + IncomePerCap + AirportEnplanements + BachelorsPct + WhitePct + BlackPct + IndigenousPct + HispanicPct + AsianPct, data=data)
+model3
+
+model4 = lm(TripsOver250PerCap ~ CarPct + AirportEnplanements, data=data)
+model4
+
+
+coeftest(model2, vcov=vcovHC(model2))
+coeftest(model, vcov=vcovHC(model))
+coeftest(model4, vcov=vcovHC(model4))
+
+anova(model3, model4, test = "F")
+anova(model, model2, test = "F")
+
+# 
+# install.packages("Hmisc")
+# library("Hmisc")
+# data = drop_na(data)
+# res2 <- rcorr(as.matrix(data))
+# res2
+
+
+
+```
