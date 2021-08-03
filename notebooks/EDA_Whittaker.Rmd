@@ -101,7 +101,7 @@ pairs(~TripsOver250PerCap + CarPct + IncomePerCap + Dose1Pct, data=data)
 names(data_fips)[names(data_fips) == 'Recip_County'] <- 'County'
 
 data2 <- merge(data,data_fips,by = "County")
-names(data2)[names(data2) == 'FIPS'] <- 'fips'
+names(data)[names(data) == 'FIPS'] <- 'fips'
 data_fips
 data
 data2
@@ -109,7 +109,7 @@ library(usmap)
 library(ggplot2)
 
 #US map of vaccination rate
-plot_usmap("counties", data = data2, values = "Dose1Pct", exclude = c("TX", "AK", "HI")) +
+plot_usmap("counties", data = data, values = "Dose1Pct", exclude = c("TX", "AK", "HI")) +
    labs(title = "Vaccination Rate by County (Excluding non-reporting counties)", subtitle = "Do counties with a higher vaccination rate have more travel?") +  ggplot2::scale_fill_continuous(low = "light blue", high = "dark blue", name = "Vaccination rate") +
   theme(legend.position = "right")
   
@@ -117,7 +117,7 @@ plot_usmap("counties", data = data2, values = "Dose1Pct", exclude = c("TX", "AK"
 
 ```{r}
 #Plot USA trips
-plot_usmap("counties", data = data2, values = "TripsOver250PerCap", exclude = c("AK", "HI")) +
+plot_usmap("counties", data=data, values = "TripsOver250PerCap", exclude = c("AK", "HI")) +
    labs(title = "Trips over 250 miles per capita", subtitle = "Do counties with a higher vaccination rate have more travel?") +  ggplot2::scale_fill_continuous(low = "light blue", high = "dark blue", name = "Trips per capita") +
   theme(legend.position = "right")
 
@@ -128,9 +128,9 @@ plot_usmap("counties", data = data2, values = "TripsOver250PerCap", exclude = c(
 
 ```{r}
 #Plot California
-plot_usmap("counties", include = c("CA"), data = data2, values = "TripsOver250PerCap") +  ggplot2::scale_fill_continuous(low = "light blue", high = "dark blue", name = "Trips over 250 miles per capita") +
+plot_usmap("counties", include = c("CA"), data = data, values = "TripsOver250PerCap") +  ggplot2::scale_fill_continuous(low = "light blue", high = "dark blue", name = "Trips over 250 miles per capita") +
   theme(legend.position = "right")
-plot_usmap("counties", include = c("CA"), data = data2, values = "Dose1Pct") +  ggplot2::scale_fill_continuous(low = "light blue", high = "dark blue", name = "Vaccination rate (%)") +
+plot_usmap("counties", include = c("CA"), data = data, values = "Dose1Pct") +  ggplot2::scale_fill_continuous(low = "light blue", high = "dark blue", name = "Vaccination rate (%)") +
   theme(legend.position = "right")
 ```
 
