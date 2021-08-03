@@ -1,0 +1,57 @@
+---
+title: "EDA on Dataset"
+output: pdf_document
+---
+
+This is an EDA on the dataset to understand the variables of Education & Income.
+Data quality issues have been resolved in preprocessing, this is to see the visuals. 
+
+```{r load packages, message = FALSE}
+library(tidyverse)
+library(dplyr)
+#install.packages('gclus')
+#install.packages('usmap')
+library(gclus)
+library(broom)
+library(patchwork)
+library(sandwich)
+library(lmtest)
+library(stargazer)
+install.packages("corrplot")
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load data} 
+setwd(".")
+data <- read.csv(file=file.path("../src/processed_data/", "Selected_Data_V2.csv"))
+```
+
+
+```{r look at columns}
+names(data)
+```
+
+
+```{r conduct EDA in this chunk}
+
+income <- hist(data$IncomePerCap, col=c('green'), main = "Average Income Per Cap By County", xlab = "Salary($)")
+edu <- hist(data$BachelorsPct, col=c('light blue'), main = "% of County with Bachelors Degrees", xlab = "% Bachelors")
+vax <- hist(data$Dose1Pct, col=c('yellow'), main = "% Vaccine Dose #1 Administered Per County", xlab = "% Dose 1")
+
+```
+
+
+```{r conduct EDA in this chunk}
+
+#more plots - trips
+trips_100 <- hist(data$TripsOver100PerCap, col=c('purple'), main = "Trips Over 100 Miles Per Capita", xlab = "Number of Trips")
+trips_250 <- hist(data$TripsOver250PerCap, col=c('pink'), main = "Trips Over 250 Miles Per Capita", xlab = "Number of Trips")
+
+```
+
+```{r correlation plots}
+pairs(~TripsOver250PerCap + BachelorsPct + IncomePerCap + Dose1Pct, data=data, col=c('purple'))
+```
