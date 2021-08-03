@@ -20,7 +20,7 @@ library(lmtest)
 
 ```{r}
 setwd(".")
-data <- read.csv("Selected_Data_V1.csv", strip.white=TRUE)
+data <- read.csv("Selected_Data_V2.csv", strip.white=TRUE)
 data_fips <- read.csv("vaccines.csv", strip.white=TRUE)
 ```
 
@@ -73,7 +73,7 @@ no_vaccine_check = subset(no_vaccine_check, Dose1Pct == 0)
 no_vaccine_check
 # view(no_vaccine_check)
 
-
+view(data)
 ```
 
 
@@ -138,24 +138,27 @@ plot_usmap("counties", include = c("CA"), data = data2, values = "Dose1Pct") +  
 
 ```{r}
 
-model  = lm(TripsOver250PerCap ~ Dose1Pct + AirportEnplanements, data=data)
+model  = lm(TripsOver250PerCap ~ Dose1Pct, data=data)
 model
 
-model2 = lm(TripsOver250PerCap ~ Dose1Pct + CarPct + IncomePerCap + AirportEnplanements + BachelorsPct + WhitePct + BlackPct + IndigenousPct + HispanicPct + AsianPct, data=data)
+model2 = lm(TripsOver250PerCap ~ Dose1Pct + CarPct + log(AirportEnplanements+1), data=data)
 model2
 
-model3 = lm(TripsOver250PerCap ~ Dose1Pct + CarPct + IncomePerCap + AirportEnplanements + BachelorsPct + WhitePct + BlackPct + IndigenousPct + HispanicPct + AsianPct, data=data)
+model2a = lm(TripsOver250PerCap ~ Dose1Pct + CarPct + AirportEnplanements + HispanicPct, data=data)
+model2b = lm(TripsOver250PerCap ~ Dose1Pct + CarPct, data=data)
+
+model3 = lm(TripsOver250PerCap ~ Dose1Pct + CarPct + IncomePerCap + log(AirportEnplanements+1) + BachelorsPct + WhitePct + BlackPct + IndigenousPct + HispanicPct + AsianPct, data=data)
 model3
 
-model4 = lm(TripsOver250PerCap ~ CarPct + AirportEnplanements, data=data)
-model4
+# model4 = lm(TripsOver250PerCap ~ CarPct + AirportEnplanements, data=data)
+# model4
 
 
-coeftest(model2, vcov=vcovHC(model2))
 coeftest(model, vcov=vcovHC(model))
-coeftest(model4, vcov=vcovHC(model4))
+coeftest(model2, vcov=vcovHC(model2))
+coeftest(model3, vcov=vcovHC(model3))
 
-anova(model3, model4, test = "F")
+anova(model, model3, test = "F")
 anova(model, model2, test = "F")
 
 # 
@@ -165,6 +168,38 @@ anova(model, model2, test = "F")
 # res2 <- rcorr(as.matrix(data))
 # res2
 
+plot(model2a, 1)
+plot(model2b, 1)
 
+plot(model2a, 3)
+plot(model2b, 3)
+
+data_residual <- broom::augment(model2a)
+
+data_residual %>%
+  ggplot()+
+  aes(x=resid(model2a)) + 
+  geom_histogram()
+
+
+
+data_residual2 <- broom::augment(model2b)
+
+data_residual2 %>%
+  ggplot()+
+  aes(x=resid(model2b)) + 
+  geom_histogram()
+
+# plot_resids_1 <- d %>% 
+#   ggplot(aes(sample = resid(model2a))) + 
+#   stat_qq() + stat_qq_line()
+# 
+# plot_resids_1
+# 
+# plot_resids_2 <- d %>% 
+#   ggplot(aes(sample = resid(model2b))) + 
+#   stat_qq() + stat_qq_line()
+# 
+# plot_resids_2
 
 ```
