@@ -163,3 +163,6 @@ full_data = merge(full_data, airports, by = c("State", "County.Name.Filt.On"), a
 ```{r}
 write.csv(full_data, "./processed_data/Processed_Data_V1.csv")
 ```
+```{r}
+full_data[full_data$State == "LA",]
+```
