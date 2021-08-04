@@ -26,6 +26,7 @@ library(stargazer)
 The summer of 2021 is anticipated to be a partial return to normal life after the COVID-19 pandemic, with only certain elements of pre-pandemic life returning in full force. While government-encouraged lockdowns are still the norm in many parts of the world, the United States has seen a surge of demand among those ready to travel after about 1½ years of encouraged distancing. Even though returning to the workplace is still on hold for a sizable proportion of knowledge workers that have the luxury of working remotely, citizens of the United States appear willing to travel - especially domestically.
 
 One anecdotal example of the demand for travel is the current rental car shortage.  A recent influx of travelers to Hawaii led some tourists to resort to renting U-haul moving trucks for their vacations - not to move furniture in Hawaii, but instead to circumvent astronomical rental car prices. While Hawaii is more of a “destination” travel location, the demand for travel and the rental car shortage is not limited to only “destination” locations.
+
 Airport screening data from the Transportation Security Administration (TSA) shows that as of June 30th, 2021, airport security officers at the TSA were screening about 2 million people daily. This is still down significantly from 2019 when about 2.5 million passengers passed through airport security each day. However, this is still up considerably compared to June 2020, when only about 500,000 passengers traveled through an airport. This increase in travel observed in 2021 is possibly due to the availability of vaccines, which is likely to increase the willingness to travel in 2021, since the previous summer (2020) saw a near-complete collapse of travel (80% decline in passengers) without the presence of a vaccine. Are people receiving the vaccine willing to travel again, and is this willingness actually resulting in an increase in travel?
 
 Our research question explores a causal relationship between the vaccination rate (as of May 1st, 2021) and travel in June (defined as a “trip” - measured by cell phone location data - over 250 miles). We used the May 1st vaccination cutoff for a first dose to measure June travel data because of the CDC recommendation to wait two weeks after a second dose (if needed) before travel. In order to assess causality, we will control for certain variables in our models that also likely impact travel rates - availability of a car, proximity to an airport, education, and economic status. Our data is at the county level to measure discrepancies within states and determine differences in travel habits between county inhabitants within those states. One example of a discrepancy within states is San Francisco County, CA, where almost 70% are fully vaccinated (as of July 26th). In contrast, Del Norte County, CA, has only a 33% vaccination rate. By measuring travel at the county level, we will be able to identify important differences between counties with higher and lower levels of vaccination rates.
@@ -292,7 +293,7 @@ pairs(~TripsOver250PerCap + Dose1Pct + CarPct + IncomePerCap + BachelorsPct, dat
   
 ```
 
-In order to select the best combination of these variables to include in our model, we used an F-test to compare the model outputs and a variable significance test to identify a subset of the predictors that we believe to be the best at explaining the response. While the results are detailed in the following section, the only significant variables other than the Dose 1 percentage in model 3 (model with all variables included) were the percentage of households with cars, access to airports, and % Hispanic. For our model with the most important covariants, we kept the households with cars and access to airport variables, choosing to not control for race as only one race was significant.
+In order to select the best combination of these variables to include in our model, we used an F-test to compare the model outputs and a t-test to identify a subset of the predictors that we believe to be the best at explaining the response. While the results are detailed in the following section, the only significant variables other than the Dose 1 percentage in model 3 (model with all variables included) were the percentage of households with cars, access to airports, and % Hispanic. For our model with the most important covariants, we kept the households with cars and access to airport variables, choosing to not control for race as only one race was significant.
 
 To separate impact and analyze a wide range of variables, we used 3 different models with separate subsets of variables to conduct the analysis (as shown in the following regression analysis section)
 
@@ -303,7 +304,7 @@ To separate impact and analyze a wide range of variables, we used 3 different mo
 model  = lm(TripsOver250PerCap ~ Dose1Pct, data=data)
 model
 
-model2 = lm(TripsOver250PerCap ~ Dose1Pct + CarPct + log(AirportEnplanements+1), data=data)
+model2 = lm(TripsOver250PerCap ~ Dose1Pct + CarPct + IncomePerCap, data=data)
 model2
 
 # model2a = lm(TripsOver250PerCap ~ Dose1Pct + CarPct + log(AirportEnplanements+1) + HispanicPct, data=data)
@@ -367,7 +368,7 @@ anova(model, model2, test = "F")
 
 ## Regression Analysis
 
-The model with the highest R^2 was our Model 3, which was higher than the first two models, but still fairly low. The R^2 for this model is 0.044, and the Adjusted R^2 is 0.040. 
+The model with the highest R^2 was our Model 3, which was higher than the first two models, but still fairly low. The R^2 for this model is 0.044, and the Adjusted R^2 is 0.040. With observing a low R^2, we would hesitate to draw any conclusion from the impact of vaccine doses on travel over 250 miles, even with controlling for different factors.
 
 In the table below, we include statistical outputs for all three models. Model 1 contains only the primary covariate; Model 2 contains a subset of covariates, and Model 3 contains all covariates in this dataset.
 
@@ -378,3 +379,7 @@ stargazer(model, model2, model3, title="Results", type="text")
 The 4 coefficients that are statistically significant are: Dose1Pct, CarPct, IncomePerCap, and HispanicPct. 
 
 One interesting note is that although HispanicPct is statistically significant, none of the other ethnic groups in this analysis are statistically significant. Given this context, we are hesitant to trust HispanicPct as practically significant.
+
+## Conclusion
+
+The team looked to research any causal relationship between the vaccination rate (as of May 1st, 2021) and the number of trips over 250 miles in June. We are unable to draw a meaningful causal relationship from our research, due to a low R^2 across all of our models. When determining the impact on travel over 250 miles, a different set of variables should be explored to understand any causal relationship. As a result, further analysis would need to be performed on other potential explanatory and control variables in order to draw a causal conclusion. We recommend starting with identified limitations of our model, which did not include political party affiliation or travel habits prior to the pandemic. The summer of 2021 is likely to see a spike in travel, however travel habits do not seem to be any different between counties with high vaccination rates and low vaccination rates.
