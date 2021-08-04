@@ -7,37 +7,161 @@ library(dplyr)
 
 ```{r}
 setwd(".")
-data <- read.csv(file=file.path("../src/processed_data/", "Selected_Data_V1.csv"))
+raw_data <- read.csv(file=file.path("../src/processed_data/", "Processed_Data_V1.csv"))
+data <- read.csv(file=file.path("../src/processed_data/", "Selected_Data_V2.csv"))
 ```
 
-```{r}
-head(data)
-```
 
 ## Demographics
+Due to the higher amount of trips taken by rural populations with smaller population sizes and greater swings in diversity than anticipated, we broke down diversity data in the counties the U.S. census definition for White, Black, Indigenous (called American Indian in the Census documentation), Asian and Hispanic. We used Census responses (and thus Census definitions) to identify the breakdown of racial groups and ethnic catagories of Asian, Black, Hispanic, Indigenous (American Indian) and White in a county. By far and away, the vast majority of counties in the U.S. are majority White. These are also the smallest counties in the U.S. by population. 
 ```{r}
+# demo_data <- data %>%
+#   mutate(Largest_Demo = )
 hist(data$WhitePct)
-hist(data$BlackPct)
-hist(data$IndigenousPct)
-hist(data$AsianPct)
-hist(data$HispanicPct)
+#hist(data$BlackPct)
+#hist(data$IndigenousPct)
+#hist(data$AsianPct)
+#hist(data$HispanicPct)
+#TODO: make a better histogram 
+# p <- ggplot() + 
+#   geom_histogram(data = data, aes(x = TripsOver100PerCap, fill = "r"), alpha = 0.3, bins = 50) +
+#   geom_histogram(data = data, aes(x = TripsOver250PerCap, fill = "b"), alpha = 0.3 ,bins = 100) +
+#   scale_colour_manual(name ="Legend", values = c("r" = "red", "b" = "blue"), labels=c("b" = "Trips over 250 miles", "r" = "Trips over 100 miles")) +
+#   scale_fill_manual(name ="Legend", values = c("r" = "red", "b" = "blue"), labels=c("b" = "Trips over 250 miles", "r" = "Trips over 100 miles"))
+# 
+# p
+```
+When looking at percentage of county of certian Census backgrouns vs. number of trips over 100 miles taken, counties with higher Asian populations traveled less and counties with Indigenous populations traveled more. However, this realtionshi did not extend to trips taken over 250 miles. 
+```{r}
+# pb <- ggplot(data, aes(x=BlackPct, y=TripsOver100PerCap)) + scale_x_log10() +
+#     geom_point() + geom_smooth()
+# 
+# pb
+# 
+# pw <- ggplot(data, aes(x=WhitePct, y=TripsOver100PerCap)) + 
+#     geom_point() + geom_smooth()
+# 
+# pw
+
+pa <- ggplot(data, aes(x=AsianPct, y=TripsOver100PerCap)) + scale_x_log10() +
+    geom_point() + geom_smooth() + labs(title = "Log Percent in County who Identify as Asian vs Trips over 100 per Capita")
+
+pa
+
+# ph <- ggplot(data, aes(x=HispanicPct, y=TripsOver100PerCap)) + scale_x_log10() +
+#     geom_point() + geom_smooth()
+# 
+# ph
+
+pi <- ggplot(data, aes(x=IndigenousPct, y=TripsOver100PerCap)) + scale_x_log10() +
+    geom_point() + geom_smooth() + labs(title = "Log Percent in County who Identify as Indigenous vs Trips over 100 per Capita")
+
+pi
+```
+```{r echo = False, results = False}
+pb <- ggplot(data, aes(x=BlackPct, y=TripsOver250PerCap)) + scale_x_log10() +
+    geom_point() + geom_smooth()
+
+pb
+
+pw <- ggplot(data, aes(x=WhitePct, y=TripsOver250PerCap)) +
+    geom_point() + geom_smooth()
+
+pw
+
+pa <- ggplot(data, aes(x=AsianPct, y=TripsOver250PerCap)) + scale_x_log10() +
+    geom_point() + geom_smooth()
+
+pa
+
+ph <- ggplot(data, aes(x=HispanicPct, y=TripsOver250PerCap)) + scale_x_log10() +
+    geom_point() + geom_smooth()
+
+ph
+
+pi <- ggplot(data, aes(x=IndigenousPct, y=TripsOver250PerCap)) + scale_x_log10() +
+    geom_point() + geom_smooth()
+
+pi
 ```
 
 ## Number of trips
+To examine travel in June 2021 we chose two trip distances to explore in our EDA: total trips over 100 miles per person in the county, and total trips over 250 miles per person in the county. The average county had 1.4 trips over 100 miels and only 0.22 trips over 100 miles. The spread of the 100 mile trips was quite normally distributed, while the distribution of trips over 250 miles dropped precipitously. 
+
+```{r echo = False, results = False}
+summary(data$TripsOver100PerCap)
+summary(data$TripsOver250PerCap)
+```
+
+```{r}
+p <- ggplot() + 
+  geom_histogram(data = data, aes(x = TripsOver100PerCap, fill = "r"), alpha = 0.3, bins = 50) +
+  geom_histogram(data = data, aes(x = TripsOver250PerCap, fill = "b"), alpha = 0.3 ,bins = 100) +
+  scale_colour_manual(name ="Legend", values = c("r" = "red", "b" = "blue"), labels=c("b" = "Trips over 250 miles", "r" = "Trips over 100 miles")) +
+  scale_fill_manual(name ="Legend", values = c("r" = "red", "b" = "blue"), labels=c("b" = "Trips over 250 miles", "r" = "Trips over 100 miles"))
+
+p
+```
+Plotting the log of county population against trips over 100 miles shows a negative relationship between county population size and average trips over 100 miles taken per person. However, this relationship does not extend to trips over 250 miles. This may be indicative of smaller counties requiring farther distances for residents to travel in order to access basic services. 
+```{r echo = False, return = False}
+p <- ggplot(data, aes(x=TotPop, y=TripsOver100PerCap)) + scale_x_log10() +
+    geom_point() + geom_smooth()
+
+p 
+
+p2 <- ggplot(data, aes(x=TotPop, y=TripsOver250PerCap)) + scale_x_log10() +
+    geom_point() + geom_smooth()
+
+p2
+```
+## Demographics and Number of Trips
 ```{r}
 hist(data$TripsOver100PerCap)
 hist(data$TripsOver250PerCap)
 ```
-## Demographis and Number of Trips
+
 ```{r}
+install.packages("corrplot")
+pairs(~TripsOver100PerCap + WhitePct + BlackPct + IndigenousPct + AsianPct + HispanicPct, data=data)
+
 ```
 ## Airports 
-```{r}
+```{r, echo = False, results = False}
+data[order(data$AirportEnplanements, decreasing = TRUE),]
 ```
 
 ## Airports and Number of Trips
-```{r}
-hist(log10(na.omit(data$AirportEnplanements)))
+In our filtered dataset, 278 counties had an airport which provided non-regional passenger service. The top 5 busiest airports were located in Fulton, GA, Cook, IL, Queens, NY, Los Angeles, CA, and Denver, CO . These airports are responsible for 31% of air travel in the U.S. The average trips over 100 miles per capita in these counties was 0.75 compared to a national 1.37. The average trips over 250 miles per capita was 0.3 compared to a national 0.22 indicating that for these high-travel cities, the population didn't necessarily travel more. A histogram distribution of airport enplanements per county highlights just how many counties do not have a airport and just how busy the top 5 airports in the U.S. are comparitively.  
 
-na.omit(data$AirportEnplanements)
+```{r, echo = False, results = False}
+summary(data$AirportEnplanements)
+nrow(data[data$AirportEnplanements>0,])
+airport_data_sorted <- data[order(data$AirportEnplanements, decreasing = TRUE),]
+sum(airport_data_sorted[0:5,]$AirportEnplanements)/sum(airport_data_sorted$AirportEnplanements)*100
+summary(airport_data_sorted[0:5,]$TripsOver100PerCap)
+summary(airport_data_sorted$TripsOver100PerCap)
+
+summary(airport_data_sorted[0:5,]$TripsOver250PerCap)
+summary(airport_data_sorted$TripsOver250PerCap)
+```
+
+```{r}
+## plot
+#p <- data %>%
+#  filter( price<300 ) %>%
+#  ggplot( aes(x=price)) +
+#    geom_histogram( binwidth=3, fill="#69b3a2", color="#e9ecef", alpha=0.9) +
+#    ggtitle("Bin size = 3") +
+#    theme_ipsum() +
+#    theme(
+#      plot.title = element_text(size=15)
+#    )+ labs(title = "Effect of Vitamin C on Tooth Growth",
+#              subtitle = "Plot of length by dose",
+#              caption = "Data source: ToothGrowth")
+#p)
+
+p <- ggplot(data, aes(x=AirportEnplanements)) + 
+  geom_histogram(bins = 50) + labs(title = " Log Distribution of Airport Enplanements") + scale_y_log10()
+
+p
 ```

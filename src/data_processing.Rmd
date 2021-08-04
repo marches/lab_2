@@ -137,16 +137,6 @@ cars$State <- trimws(cars$State)
 vaccinations$State <- trimws(vaccinations$State)
 education$State <- trimws(education$State)
 ```
-```{r}
-trips[trips$State == "LA",]
-airports[airports$State == "LA",]
-census[census$State == "LA",]
-income[income$State == "LA",]
-cars[cars$State == "LA",]
-vaccinations[vaccinations$State == "LA",]
-education[education$State == "LA",]
-
-```
 
 Complete the merge. Merge on state names and county names. Due to variability in how some counties are documented, they will be lost. Hope we can make an argument that we have enough data remaining. Perform inner merge on income, trips and census and outer merge on airports. 
 ```{r}
@@ -162,7 +152,4 @@ full_data = merge(full_data, airports, by = c("State", "County.Name.Filt.On"), a
 
 ```{r}
 write.csv(full_data, "./processed_data/Processed_Data_V1.csv")
-```
-```{r}
-full_data[full_data$State == "LA",]
 ```

@@ -1,0 +1,293 @@
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+install.packages('usmap')
+install.packages("corrplot")
+library(tidyverse)
+library(dplyr)
+library(broom)
+library(patchwork)
+library(sandwich)
+library(lmtest)
+library(haven)
+library(magrittr)
+library(cowplot)
+library(ggplot2)
+library(usmap)
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+setwd(".")
+data <- read.csv("Selected_Data_V2.csv", strip.white=TRUE)
+data_fips <- read.csv("vaccines.csv", strip.white=TRUE)
+```
+
+```{r prep, echo=FALSE, message=FALSE, warning=FALSE}
+head(data)
+head(data_fips)
+# state_check = select(data, "County", "TotPop", "State", "Dose1Pct")
+# data_frame(state_check)
+# new_df = select(state_check, state_check$State == "AL")
+# new_df
+
+# no_vaccine_check = select(data, "County", "TotPop", "State", "Dose1Pct")
+# no_vaccine_check = subset(no_vaccine_check, Dose1Pct == 0)
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+graph1 = hist(data$CarPct, xlim=c(80,100), breaks=60, main="Distribution of U.S. Households with access to a car (%)", 
+     xlab="Car Access % (Households)")
+graph2 = hist(data$Dose1Pct, main="Distribution of U.S. Population (%) with at least 1 vaccine dose (as of 5/1)", 
+     xlab="Vaccine % (1st Dose)")
+
+summary_cars = summary(data$CarPct)
+summary_vaccine = summary(data$Dose1Pct)
+
+#Potential issue with some counties showing no vaccinations
+
+#CarPct distribution
+
+```
+## Exploratory Data Analysis
+
+In order to analyze June travel data, we chose to use a cut-off date of May 1st for the vaccine data in order to ensure that there was a month of buffer time for the recently vaccinated to be comfortable with traveling. Additionally, this reflects CDC guidance that the vaccine is not immediately effective. Interestingly, the vaccine % is mostly normally distributed - however there is a spike in the center of the chart that indicates that the impact of any outliers is minimal. As a result, this will be a satisfactory variable to include in our model and will not require transformation.
+
+```{r}
+
+graph1 = hist(data$CarPct, xlim=c(80,100), breaks=60, main="Distribution of U.S. Households with access to a car (%)", 
+     xlab="Car Access % (Households)")
+```
+
+A variable that may impact the number of trips taken over 250 miles is access to a car. For this variable, we used the percentage of households (by county) with access to a car. Without car access, it would be difficult to travel over 250 miles, so this is an important control measure to include as we would like to understand the causal relationship between vaccines the and travel over 250 miles. As shown below, the access to a car is also mostly normally distributed between 85% and 100%, with a slight skew towards higher vehicle access. Consequently, this variable will be useful for the causal model to control for vehicle access, as we would like to remove that predictive coefficient from the vaccine dose.
+
+```{r}
+
+graph2 
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Summary statistics and error investigation
+summary_cars
+summary_vaccine
+nrow(data)
+sum(data$Dose1Pct == 0)
+sum(data$TripsOver100PerCap > 0, na.rm = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+#EDA on errors / abnormalities in original data
+no_vaccine_check = select(data, "County", "TotPop", "State", "Dose1Pct")
+no_vaccine_check = subset(no_vaccine_check, Dose1Pct == 0)
+
+no_vaccine_check
+# view(no_vaccine_check)
+
+
+```
+
+
+```{r}
+plot(data$TripsOver250PerCap,data$Dose1Pct, main="Trips over 250 miles (per capita) vs. Population with at least 1st dose (%)",
+ylab="1st Dose (%)", xlab="Trips over 250 miles (per capita)")
+
+
+```
+
+## Exploratory Data Analysis
+
+In order to analyze June travel data, we chose to use a cut-off date of May 1st for the vaccine data in order to ensure that there was a month of buffer time for the recently vaccinated to be comfortable with traveling. Additionally, this reflects CDC guidance that the vaccine is not immediately effective. Interestingly, the vaccine % is mostly normally distributed - however there is a spike in the center of the chart that indicates that the impact of any outliers is minimal. As a result, this will be a satisfactory variable to include in our model and will not require transformation.
+
+A variable that may impact the number of trips taken over 250 miles is access to a car. For this variable, we used the percentage of households (by county) with access to a car. Without car access, it would be difficult to travel over 250 miles, so this is an important control measure to include as we would like to understand the causal relationship between vaccines the and travel over 250 miles. As shown below, the access to a car is also mostly normally distributed between 85% and 100%, with a slight skew towards higher vehicle access. Consequently, this variable will be useful for the causal model to control for vehicle access, as we would like to remove that predictive coefficient from the vaccine dose.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+install.packages("corrplot")
+
+
+#Chart Compare
+crossvars = pairs(~TripsOver250PerCap + Dose1Pct + CarPct + IncomePerCap + BachelorsPct, data=data)
+
+
+```
+
+## Exploratory Data Analysis
+
+After excluding Texas, Hawaii, and Alaska (as outlined in the data section of the report) - the vaccination rate by county shows that there are pockets of higher vaccination rates along the east and west coast, along with some northern states (e.g., Minnesota, Michigan) with high vaccination rates. Low vaccination rates are seen in less populated or rural areas in the country. 
+
+California is a good example of the "coastal" effect where there are higher vaccination rates closer to the ocean, where there are larger cities and higher population density as compared to the inland areas. In the county view below, note that the gray counties do not report their vaccination data to the CDC because they fall below a 20,000 population threshold.
+
+Using the same map visualization to show the number of trips over 250 miles per capita shows a slightly different effect, with the less populated or rural areas having a higher per capita measurement of trips. This may be due to having to travel much longer distances for basic necessities like food  - and not travel for "leisure" which is why we chose a distance over 250 miles to define a vacation. 
+
+One anecdotal example of this impact is a higher rate of trips per capita is on Native American reservations, where inhabitants in those counties may have to travel extremely long distances for basic necessities like an affordable grocery store. In the following in-depth view into Arizona, the counties with the highest per capita measurements have significant Native American populations - a highly unique population demographic characteristic. The Tohono O'Odham reside in Pinal and Pima counties (highest per capita measurements), while the Najo, Hopi, and Hualapai Native Americans all primarily reside in other high per capita travel counties. Phoenix, the most populated location located in Maricopa County, is around the median for per capita trips.
+
+Another driver of per capita trip distance is the population of the county. Rural counties seem to require more trips over 250 - it is likely that these trips are not for "leisure" but are done out of necessity. Of the top 150 counties in the USA measured by per capita trips over 250 miles, there is not one county with a population over 1,000,000. Even though there are around 50 counties with a population over 1,000,000 in the US, the per capita travel in these counties appears lower compared to more rural areas.
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+#Prep data for US Mapping
+names(data_fips)[names(data_fips) == 'Recip_County'] <- 'County'
+
+data2 <- merge(data,data_fips,by = "County")
+names(data)[names(data) == 'FIPS'] <- 'fips'
+data_fips
+data
+data2
+
+
+#US map of vaccination rate
+us_vaccine = plot_usmap("counties", data = data, values = "Dose1Pct", exclude = c("TX", "AK", "HI")) +
+   labs(title = "Vaccination Rate by County (Excluding non-reporting counties)", subtitle = "Do counties with a higher vaccination rate have more travel?") +  ggplot2::scale_fill_continuous(low = "light blue", high = "dark blue", name = "Vaccination rate") +
+  theme(legend.position = "right")
+  
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Plot USA trips
+us_trips = plot_usmap("counties", data=data, values = "TripsOver250PerCap", exclude = c("AK", "HI", "TX")) +
+   labs(title = "Trips over 250 miles per capita", subtitle = "Do counties with a higher vaccination rate have more travel?") +  ggplot2::scale_fill_continuous(low = "light blue", high = "dark blue", name = "Trips per capita") +
+  theme(legend.position = "right")
+
+
+  
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Plot California
+az_trips = plot_usmap("counties", include = c("AZ"), data = data, values = "TripsOver250PerCap") +  ggplot2::scale_fill_continuous(low = "light blue", high = "dark blue", name = "Trips over 250 miles per capita") +
+  theme(legend.position = "right")
+cali_vaccine = plot_usmap("counties", include = c("CA"), data = data, values = "Dose1Pct") +  ggplot2::scale_fill_continuous(low = "light blue", high = "dark blue", name = "Vaccination rate (%)") +
+  theme(legend.position = "right")
+```
+## Exploratory Data Analysis
+
+After excluding Texas, Hawaii, and Alaska (as outlined in the data section of the report) - the vaccination rate by county shows that there are pockets of higher vaccination rates along the east and west coast, along with some northern states (e.g., Minnesota, Michigan) with high vaccination rates. Low vaccination rates are seen in less populated or rural areas in the country. 
+
+```{r}
+
+#US map of vaccination rate
+us_vaccine 
+```
+
+California is a good example of the "coastal" effect where there are higher vaccination rates closer to the ocean, where there are larger cities and higher population density as compared to the inland areas. In the county view below, note that the gray counties do not report their vaccination data to the CDC because they fall below a 20,000 population threshold.
+
+```{r}
+
+#US map of vaccination rate
+cali_vaccine 
+```
+Using the same map visualization to show the number of trips over 250 miles per capita shows a slightly different effect, with the less populated or rural areas having a higher per capita measurement of trips. This may be due to having to travel much longer distances for basic necessities like food  - and not travel for "leisure" which is why we chose a distance over 250 miles to define a vacation. 
+
+```{r}
+
+#US map of vaccination rate
+us_trips 
+```
+One anecdotal example of this impact is a higher rate of trips per capita is on Native American reservations, where inhabitants in those counties may have to travel extremely long distances for basic necessities like an affordable grocery store. In the following in-depth view into Arizona, the counties with the highest per capita measurements have significant Native American populations - a highly unique population demographic characteristic. The Tohono O'Odham reside in Pinal and Pima counties (highest per capita measurements), while the Najo, Hopi, and Hualapai Native Americans all primarily reside in other high per capita travel counties. Phoenix, the most populated location located in Maricopa County, is around the median for per capita trips.
+```{r}
+
+#US map of vaccination rate
+az_trips 
+```
+Another driver of per capita trip distance is the population of the county. Rural counties seem to require more trips over 250 - it is likely that these trips are not for "leisure" but are done out of necessity. Of the top 150 counties in the USA measured by per capita trips over 250 miles, there is not one county with a population over 1,000,000. Even though there are around 50 counties with a population over 1,000,000 in the US, the per capita travel in these counties appears lower compared to more rural areas
+
+
+## Model Building Process
+
+After performing EDA in preparation for the modeling goal of building a causal regression model for the impact of Vaccination Rate (1st Dose) on Travel (Trips over 250 miles) - we ultimately selected the following variables (all at the county level) to include in the models. The variable selection process was iterative with many different combinations tested, with discussion on the qualitative relationships prior to the quantitative analysis. Note that further details on the data selection and associated methodology to prepare for model building can be found in the "Data" section.
+
+- Number of trips per capita over 250 miles
+- First coronavirus vaccine dose (%)
+- Households with car access (%)
+- Airport enplanements (#, used as a proxy for airport access)
+- Income per capita
+- Bachelors degree (% that have obtained)
+- Race and demographic control variables (% White, % Black, % Hispanic, % Indigenous, % Asian)
+
+The plot below shows a scatter plot comparison between each variable (excluding Race control variables) to help visualize the correlation relationships between the variables. The strongest associations were expected (e.g., bachelors degree vs. income per capita) but we expected to see a stronger relationship between Dose 1 percentage and the trips over 250 miles, which are visualized on the top-left panels.
+
+
+```{r}
+#Plot variable comparison
+
+pairs(~TripsOver250PerCap + Dose1Pct + CarPct + IncomePerCap + BachelorsPct, data=data)
+  
+```
+
+In order to select the best combination of these variables to include in our model, we used an F-test to compare the model outputs and a variable significance test to identify a subset of the predictors that we believe to be the best at explaining the response. While the results are detailed in the following section, the only significant variables other than the Dose 1 percentage in model 3 (model with all variables included) were the percentage of households with cars, access to airports, and % Hispanic. For our model with the most important covariants, we kept the households with cars and access to airport variables, choosing to not control for race as only one race was significant.
+
+To separate impact and analyze a wide range of variables, we used 3 different models with separate subsets of variables to conduct the analysis (as shown in the following regression analysis section)
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+model  = lm(TripsOver250PerCap ~ Dose1Pct, data=data)
+model
+
+model2 = lm(TripsOver250PerCap ~ Dose1Pct + CarPct + log(AirportEnplanements+1), data=data)
+model2
+
+model2a = lm(TripsOver250PerCap ~ Dose1Pct + CarPct + AirportEnplanements + HispanicPct, data=data)
+model2b = lm(TripsOver250PerCap ~ Dose1Pct + CarPct, data=data)
+
+model3 = lm(TripsOver250PerCap ~ Dose1Pct + CarPct + IncomePerCap + log(AirportEnplanements+1) + BachelorsPct + WhitePct + BlackPct + IndigenousPct + HispanicPct + AsianPct, data=data)
+model3
+
+# model4 = lm(TripsOver250PerCap ~ CarPct + AirportEnplanements, data=data)
+# model4
+
+
+coeftest(model, vcov=vcovHC(model))
+coeftest(model2, vcov=vcovHC(model2))
+coeftest(model3, vcov=vcovHC(model3))
+
+anova(model, model3, test = "F")
+anova(model, model2, test = "F")
+
+# 
+# install.packages("Hmisc")
+# library("Hmisc")
+# data = drop_na(data)
+# res2 <- rcorr(as.matrix(data))
+# res2
+
+plot(model2a, 1)
+plot(model2b, 1)
+
+plot(model2a, 3)
+plot(model2b, 3)
+
+data_residual <- broom::augment(model2a)
+
+data_residual %>%
+  ggplot()+
+  aes(x=resid(model2a)) + 
+  geom_histogram()
+
+
+
+data_residual2 <- broom::augment(model2b)
+
+data_residual2 %>%
+  ggplot()+
+  aes(x=resid(model2b)) + 
+  geom_histogram()
+
+# plot_resids_1 <- d %>% 
+#   ggplot(aes(sample = resid(model2a))) + 
+#   stat_qq() + stat_qq_line()
+# 
+# plot_resids_1
+# 
+# plot_resids_2 <- d %>% 
+#   ggplot(aes(sample = resid(model2b))) + 
+#   stat_qq() + stat_qq_line()
+# 
+# plot_resids_2
+
+```
