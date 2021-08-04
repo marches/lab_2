@@ -71,6 +71,7 @@ The remainder of our covariate data came from a variety of sources. To incorpora
 ```{r, echo=FALSE, results = FALSE, message=FALSE, warning=FALSE}
 setwd(".")
 data <- read.csv(file=file.path("../src/processed_data/", "Selected_Data_V2.csv"))
+data <- na.omit(data)
 #data <- read.csv("Selected_Data_V2.csv", strip.white=TRUE)
 #data_fips <- read.csv("vaccines.csv", strip.white=TRUE)
 ```
@@ -429,14 +430,49 @@ The 4 coefficients that are statistically significant are: Dose1Pct, CarPct, Inc
 
 # CLM Assumptions
 
-While the size of our dataset (over 2,600 observations) is large that we need not use the Classical Linear model approach, we have completed an analysis of the CLM assumptions as an exercise. The most interesting/relevant assumptions are highlighted below. 
-
-## I.I.D. Data
+While the size of our dataset (over 2,600 observations) is large that we need not use the Classical Linear model approach, we have completed an analysis of the CLM assumptions on model #2 as an exercise. The most interesting/relevant assumptions are highlighted below. 
 
 
 ## Homoskedastic Errors
 
+We first evaluate the residual values of our model to determine whether the distribution of the errors is homoskedastic. A visual inspection should show a constant band of even thickness from left to right around the fitted line. For our model, this is not the case. We an area of increasing/decreasing errors which indicate that further work should be done before truly trusting the model. 
+
+
+```{r, fig.height = 4,message=FALSE,echo=FALSE,warnings = FALSE, fig.cap = "Scale-Location plot to evaluate model for linear conditional expectation andhomoskedastic errors."}
+
+data %>% 
+  mutate(
+    model_one_preds = predict(model2), 
+    model_one_resids = resid(model2)
+  ) %>% 
+  ggplot(aes(model_one_preds, model_one_resids, label = GeoName)) + 
+  geom_point() + 
+  stat_smooth() + theme_minimal() + ggtitle("Plot of predicted values vs. residual values for model #2") + xlab("Predicted Value") + 
+  ylab("Residual Value") 
+```
+
 ## Linear Conditional Expectation
+
+It is difficult to asses whether our model has a linear conditional expectation based on the plot of predicted vs residual values for model 2. The trend line certainly appears quite linear, however the tight distribution of data points. This might suggest the need for a further transformation of one of our variables to create more opportunity for our model to create linear predictions. 
+
+## Normally Distributed Errors
+
+To evaluate whether model 2 has normally distributed errors we examine the histogram of residuals for noticable deviation from normality. Fortunately, the residual distribution is quite normal, with only a slight heavy tail on the right hand side. This indicates that our model is likely unbiased and we do not see any results that concern us. 
+The histogram of residuals and the qqplot shows some some deviation from normality, specifically a right skew and perhaps an unusual concentration on the right tail.
+
+
+```{r, fig.height = 4,message=FALSE,echo=FALSE,warnings = FALSE, fig.cap = "Histogram of residuals to evaluate normal error distribution."}
+
+plot_one <- data %>% 
+  ggplot(aes(x = resid(model2))) + 
+  geom_histogram(fill = "blue", alpha = 0.3) + theme_minimal() + ggtitle("Distribution of Residuals from Model #2") + xlab("Residual") + 
+  ylab("Count")
+  
+plot_one
+```
+```
+
+
 
 # Omitted Variable Bias
 
