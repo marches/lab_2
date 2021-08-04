@@ -425,15 +425,16 @@ stargazer(model, model2, model3, title="Results", type="text",
 )
 ```
 
-The 4 coefficients that are statistically significant are: Dose1Pct, CarPct, IncomePerCap, and HispanicPct. 
+The 4 coefficients that are statistically significant are: Dose1Pct, CarPct, IncomePerCap, and HispanicPct. Of these,  
 
 One interesting note is that although HispanicPct is statistically significant, none of the other ethnic groups in this analysis are statistically significant. Given this context, we are hesitant to trust HispanicPct as practically significant.
 
 # CLM Assumptions
 
-While the size of our dataset (over 2,900 individual data points) is large enough to satisfy ----, we complete an analysis of as an exercise. The most interesting/relevant assumptions are highlighted below. 
+While the size of our dataset (over 2,600 observations) is large that we need not use the Classical Linear model approach, we have completed an analysis of the CLM assumptions as an exercise. The most interesting/relevant assumptions are highlighted below. 
 
 ## I.I.D. Data
+
 
 ## Homoskedastic Errors
 
