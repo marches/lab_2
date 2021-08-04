@@ -425,9 +425,7 @@ stargazer(model, model2, model3, title="Results", type="text",
 )
 ```
 
-The 4 coefficients that are statistically significant are: Dose1Pct, CarPct, IncomePerCap, and HispanicPct. Of these,  
-
-One interesting note is that although HispanicPct is statistically significant, none of the other ethnic groups in this analysis are statistically significant. Given this context, we are hesitant to trust HispanicPct as practically significant.
+The 4 coefficients that are statistically significant are: Dose1Pct, CarPct, IncomePerCap, and HispanicPct. One interesting note is that although HispanicPct is statistically significant, none of the other ethnic groups in this analysis are statistically significant. Given this context, we are hesitant to trust HispanicPct as practically significant. Further we note that IncomePerCap is less than 0.00001 and of limited practical significance. It is likely marked as statistically significant due to the large sample size. Overall, all coefficients were small, indicating that the relationship between them and travel is likely weak. 
 
 # CLM Assumptions
 
